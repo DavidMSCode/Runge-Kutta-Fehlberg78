@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(RKF78 LANGUAGES CXX)
 
 # Set the C++ standard to C++17
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add the source files for the RKF78 library

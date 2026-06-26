@@ -4,25 +4,24 @@
  * Copyright (c) 2026 David Stanley
  */
 
+#include <algorithm>
 #include <array>
 #include <vector>
 #include <cmath>
-#include <span>
 
 #pragma once // Include guard to prevent multiple inclusions of this header file
 
 namespace RKF78
 {
 
-  template <typename State>
   struct Results
   {
-    double *y;        // Pointer to the array of computed values
-    double *t;        // Pointer to the array of time points
-    int rejected = 0; // Number of steps taken during integration
-    int accepted = 0; // Number of rejected steps during integration
-    int fevals = 0;   // Number of function evaluations performed
-    State yf;         // Final state vector after integration
+    std::vector<double> t;  // Accepted step time points
+    std::vector<std::vector<double>> y;   // Accepted step state values
+    int rejected = 0;       // Number of steps taken during integration
+    int accepted = 0;       // Number of rejected steps during integration
+    int fevals = 0;         // Number of function evaluations performed
+    std::vector<double> yf; // Final state vector after integration
   };
 
   struct Options
@@ -30,7 +29,6 @@ namespace RKF78
     double h0;   // initial step size
     double atol; // absolute tolerance
     double rtol; // relative tolerance
-    std::span<const double> tout;
   };
 
   constexpr int stages = 13;
@@ -168,9 +166,15 @@ namespace RKF78
   template <typename State, typename Params>
   using ODEFunction = void (*)(const double t, const State &y, State &dy, const Params &params);
 
+  template <typename State>
+  std::vector<double> state_to_vector(const State &state)
+  {
+    return std::vector<double>(state.begin(), state.end());
+  }
+
   // integrate template function
   template <typename State, typename Params>
-  Results<State> integrate(const double t0, const double tf, State y0, ODEFunction<State, Params> f, const Params &params, Options options)
+  Results integrate(const double t0, const double tf, State y0, ODEFunction<State, Params> f, const Params &params, Options options)
   {
     double &atol = options.atol;
     double &rtol = options.rtol;
@@ -180,14 +184,15 @@ namespace RKF78
     std::array<State, stages> k; // Array to hold the derivatives at each stage
 
     // Initialize the solution storage arrays (need to be resizeable)
-    std::vector<double> t_values; // Vector to hold the time points
-    std::vector<State> y_values;  // Vector to hold the computed values
-
     int dims = y0.size();              // Get the size of the state vector
     int prop_dir = (tf > t0) ? 1 : -1; // Determine the propagation direction based on the time interval
 
     // construct the results struct to return
-    Results<State> results;
+    Results results;
+    results.t.reserve(64);
+    results.y.reserve(64);
+    results.t.push_back(t0);
+    results.y.push_back(state_to_vector(y0));
 
     int &fevals = results.fevals;     // Initialize the function evaluation counter
     int &istep = results.accepted;    // Initialize the step counter
@@ -241,7 +246,7 @@ namespace RKF78
       State y8 = y0;
       for (int d = 0; d < dims; ++d)
       {
-        y8[d] += h * ( 34.0 / 105.0 * k[5][d] + 9.0 / 35.0 * k[6][d] + 9.0 / 35.0 * k[7][d] + 9.0 / 280.0 * k[8][d] + 9.0 / 280.0 * k[9][d] + 41.0 / 840.0 * k[11][d] +  41.0 / 840.0 * k[12][d]);
+        y8[d] += h * (34.0 / 105.0 * k[5][d] + 9.0 / 35.0 * k[6][d] + 9.0 / 35.0 * k[7][d] + 9.0 / 280.0 * k[8][d] + 9.0 / 280.0 * k[9][d] + 41.0 / 840.0 * k[11][d] + 41.0 / 840.0 * k[12][d]);
       } // end computing 8th order solution
 
       // Compute the truncation error estimate for the step
@@ -266,8 +271,9 @@ namespace RKF78
       {
         h_new = 2.0 * h; // If the error is zero, increase the step size
       }
-      else{
-      h_new = 0.9 * h * std::pow(1.0 / error_norm, 1.0 / 8.0);
+      else
+      {
+        h_new = 0.9 * h * std::pow(1.0 / error_norm, 1.0 / 8.0);
       }
       if (error_norm <= 1.0) // Check if the error is within the tolerance
       {
@@ -276,6 +282,8 @@ namespace RKF78
         t += h;  // Update the time to the new value
         h = h_new;
         istep++; // Increment the step counter
+        results.t.push_back(t);
+        results.y.push_back(state_to_vector(y0));
 
         if ((prop_dir > 0 && t >= tf) || (prop_dir < 0 && t <= tf)) // Check if the final time has been reached
         {
@@ -298,7 +306,7 @@ namespace RKF78
     } // end while loop
 
     // Store the final state vector in the results struct
-    results.yf = y0; // Set the final state vector after integration
+    results.yf = state_to_vector(y0); // Set the final state vector after integration
 
     return results; // Return the results of the integration
   }

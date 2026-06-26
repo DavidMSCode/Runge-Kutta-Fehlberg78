@@ -1,5 +1,7 @@
 #include "RKF78.hpp"
 #include <iostream>
+#include <vector>
+#include <cmath>
 
 using namespace RKF78;
 
@@ -27,28 +29,42 @@ int main(int argc, char *argv[])
     options.atol = 1e-16;
     options.rtol = 1e-16;
 
-    Results<std::array<double,2>> results = integrate(t0, tf, y0, f2, params, options);
+  auto results = integrate(t0, tf, y0, f2, params, options);
+  std::cout << "Accepted step samples: " << results.t.size() << std::endl;
+  if (!results.y.empty())
+  {
+    std::cout << "First step value: t=" << results.t.front()
+          << " y=(" << results.y.front()[0] << ", " << results.y.front()[1] << ")" << std::endl;
+    std::cout << "Last step value: t=" << results.t.back()
+          << " y=(" << results.y.back()[0] << ", " << results.y.back()[1] << ")" << std::endl;
+  }
     std::cout << "Final value: " << results.yf[0] << ", " << results.yf[1] << std::endl;
     std::cout << "Number of steps: " << results.accepted << std::endl;
     std::cout << "Number of rejected steps: " << results.rejected << std::endl;
     std::cout << "Number of function evaluations: " << results.fevals << std::endl;
 
-    //Exact solution at t=tf
-    double exact_y0 = exp(cos(pow(tf,2)));
-    double exact_y1 = exp(sin(pow(tf,2)));
 
-    // Compute the absolute error
-    double error_y0 = std::abs(results.yf[0] - exact_y0);
-    double error_y1 = std::abs(results.yf[1] - exact_y1);
 
-    //Compute the relative error
-    double rel_error_y0 = error_y0 / std::abs(exact_y0);
-    double rel_error_y1 = error_y1 / std::abs(exact_y1);
+    // // check the accepted step values against the exact solution
+    // for (std::size_t i = 0; i < results.t.size(); ++i)
+    // {
+    //   double t_step = results.t[i];
+    //   std::vector<double> y_step = results.y[i];
+    //   std::vector<double> y_exact = {exp(cos(t_step*t_step)),exp(sin(t_step*t_step))};
 
-    // Print the results
-    std::cout << "Exact solution: " << exact_y0 << ", " << exact_y1 << std::endl;
-    std::cout << "Absolute error: " << error_y0 << ", " << error_y1 << std::endl;
-    std::cout << "Relative error: " << rel_error_y0 << ", " << rel_error_y1 << std::endl;
+    //   std::cout << "t=" << t_step << " y_step=(" << y_step[0] << ", " << y_step[1] << ")"
+    //             << " y_exact=(" << y_exact[0] << ", " << y_exact[1] << ")" << std::endl;
+
+    //   double error0 = std::abs(y_step[0] - y_exact[0])/std::abs(y_exact[0]);
+    //   double error1 = std::abs(y_step[1] - y_exact[1])/std::abs(y_exact[1]);
+
+    //   std::cout << "Error in y[0]: " << error0 << std::endl;
+    //   std::cout << "Error in y[1]: " << error1 << std::endl;
+
+
+    
+    // }
+
   
 
 
