@@ -15,3 +15,11 @@ add_library(RKF78 STATIC
 target_include_directories(RKF78 PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+add_executable(RKF78_example
+    src/test.cpp
+)
+target_link_libraries(RKF78_example PRIVATE RKF78)
+target_include_directories(RKF78_example PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
