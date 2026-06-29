@@ -76,3 +76,25 @@ opt.atol=1e-14; // Absolute tolerance
 opt.rtol=1e-14; // Relative tolerance
 RKF78::Results res2 = RKF78::integrate(0.0, 5.0, y0, f_with_params, params, opt); 
 ```
+
+### Scalar (double) usage
+
+```cpp
+// No params, no options (state is a scalar double)
+void f_scalar(double /*t*/, const double& y, double& dy) {
+	dy = -0.5 * y;
+}
+double y0s = 1.0;
+RKF78::Results rs = RKF78::integrate(0.0, 5.0, y0s, f_scalar);
+```
+
+```cpp
+// With params (and options)
+struct P1 { double k; };
+void f_scalar_p(double /*t*/, const double& y, double& dy, const P1& p) {
+	dy = -p.k * y;
+}
+double y0p = 1.0; P1 p{0.4};
+RKF78::Options opt2; opt2.h0=0.1; opt2.atol=1e-12; opt2.rtol=1e-12;
+RKF78::Results rsp = RKF78::integrate(0.0, 5.0, y0p, f_scalar_p, p, opt2);
+```
