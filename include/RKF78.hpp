@@ -24,12 +24,19 @@ namespace RKF78
     std::vector<double> yf; // Final state vector after integration
   };
 
+  //passing options to the integrator and default values
   struct Options
   {
-    double h0;   // initial step size
-    double atol; // absolute tolerance
-    double rtol; // relative tolerance
+    double h0=0.1;   // initial step size
+    double atol=1e-12; // absolute tolerance
+    double rtol=1e-12; // relative tolerance
   };
+
+  // Default options used by overloads that omit Options
+  inline Options default_options()
+  {
+    return Options{0.1, 1e-12, 1e-12};
+  }
 
   constexpr int stages = 13;
 
@@ -309,5 +316,37 @@ namespace RKF78
     results.yf = state_to_vector(y0); // Set the final state vector after integration
 
     return results; // Return the results of the integration
+  }
+
+  // integrate overload for ODEs without a params argument
+  // Accepts any callable f(t, y, dy) and adapts it for the main integrator
+  template <typename State, typename Ode>
+  Results integrate(const double t0, const double tf, State y0, Ode &&f, Options options)
+  {
+    // Compile-time checks for the State and Ode types
+    static_assert(StateLike<State>,
+                  "RKF78::integrate: State must support size(), begin(), end(), and operator[]");
+    static_assert(std::is_invocable_v<Ode &, double, const State &, State &>,
+                  "RKF78::integrate: f must be callable as void f(double, const State&, State&)");
+    auto adapter = [&](const double t, const State &y, State &dy, const std::nullptr_t &)
+    {
+      f(t, y, dy);
+    };
+    return integrate<State, decltype(adapter), std::nullptr_t>(
+      t0, tf, std::move(y0), std::move(adapter), nullptr, options);
+  }
+
+  // Overload: with params, but no Options provided (uses sensible defaults)
+  template <typename State, typename Ode, typename Params>
+  Results integrate(const double t0, const double tf, State y0, Ode &&f, Params &&params)
+  {
+    return integrate(t0, tf, std::move(y0), std::forward<Ode>(f), std::forward<Params>(params), default_options());
+  }
+
+  // Overload: no params and no Options provided (uses sensible defaults)
+  template <typename State, typename Ode>
+  Results integrate(const double t0, const double tf, State y0, Ode &&f)
+  {
+    return integrate(t0, tf, std::move(y0), std::forward<Ode>(f), default_options());
   }
 }
