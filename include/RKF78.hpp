@@ -11,21 +11,44 @@
 #include <cstddef>
 #include <utility>
 #include <type_traits>
-#include <concepts>
 
 #pragma once // Include guard to prevent multiple inclusions of this header file
 
 namespace RKF78
 {
+  // Helper utilities to support both container states and scalar doubles
+  inline std::size_t rkf_size(const double &)
+  {
+    return 1;
+  }
 
-  // Minimal compile-time shape checks for the State container
   template <typename S>
-  concept StateLike = requires(S s) {
-    { s.size() } -> std::convertible_to<std::size_t>;
-    s.begin();
-    s.end();
-    s[0];
-  };
+  inline std::size_t rkf_size(const S &s)
+  {
+    return static_cast<std::size_t>(s.size());
+  }
+
+  inline double &elem(double &s, std::size_t /*i*/)
+  {
+    return s; // scalar has a single element
+  }
+
+  inline const double &elem(const double &s, std::size_t /*i*/)
+  {
+    return s; // scalar has a single element
+  }
+
+  template <typename S>
+  inline auto elem(S &s, std::size_t i) -> decltype(s[i])
+  {
+    return s[i];
+  }
+
+  template <typename S>
+  inline auto elem(const S &s, std::size_t i) -> decltype(s[i])
+  {
+    return s[i];
+  }
 
   struct Results
   {
@@ -188,19 +211,15 @@ namespace RKF78
     return std::vector<double>(state.begin(), state.end());
   }
 
+  inline std::vector<double> state_to_vector(const double &state)
+  {
+    return std::vector<double>{state};
+  }
+
   // integrate template function
   template <typename State, typename Ode, typename Params>
   Results integrate(const double t0, const double tf, State y0, Ode &&f, Params &&params, Options options)
   {
-
-    // Compile-time checks for the State and Ode types
-    static_assert(StateLike<State>,
-                  "RKF78::integrate: State must support size(), begin(), end(), and operator[]");
-    static_assert(
-        std::is_invocable_v<Ode &, double, const State &, State &, Params &> ||
-            std::is_invocable_v<Ode &, double, const State &, State &, const Params &>,
-        "RKF78::integrate: f must be callable as void f(double, const State&, State&, (const) Params&)");
-
 
 
     double &atol = options.atol;
@@ -211,7 +230,7 @@ namespace RKF78
     std::array<State, stages> k; // Array to hold the derivatives at each stage
 
     // Initialize the solution storage arrays (need to be resizeable)
-    int dims = y0.size();              // Get the size of the state vector
+    int dims = static_cast<int>(rkf_size(y0));              // Get the size of the state (1 for scalar)
     int prop_dir = (tf > t0) ? 1 : -1; // Determine the propagation direction based on the time interval
 
     // construct the results struct to return
@@ -240,7 +259,7 @@ namespace RKF78
         {
           for (int d = 0; d < dims; ++d)
           {
-            y_temp[d] += h * bk[i][j] * k[j][d];
+            elem(y_temp, d) += h * bk[i][j] * elem(k[j], d);
           }
         }
         f(t + ak[i] * h, y_temp, k[i], params);
@@ -248,7 +267,7 @@ namespace RKF78
         // check for NaN or Inf values in the computed derivatives
         for (int d = 0; d < dims; ++d)
         {
-          if (!std::isfinite(k[i][d]))
+          if (!std::isfinite(elem(k[i], d)))
           {
             bad_stage = true;
             break;
@@ -273,22 +292,22 @@ namespace RKF78
       State y8 = y0;
       for (int d = 0; d < dims; ++d)
       {
-        y8[d] += h * (34.0 / 105.0 * k[5][d] + 9.0 / 35.0 * k[6][d] + 9.0 / 35.0 * k[7][d] + 9.0 / 280.0 * k[8][d] + 9.0 / 280.0 * k[9][d] + 41.0 / 840.0 * k[11][d] + 41.0 / 840.0 * k[12][d]);
+        elem(y8, d) += h * (34.0 / 105.0 * elem(k[5], d) + 9.0 / 35.0 * elem(k[6], d) + 9.0 / 35.0 * elem(k[7], d) + 9.0 / 280.0 * elem(k[8], d) + 9.0 / 280.0 * elem(k[9], d) + 41.0 / 840.0 * elem(k[11], d) + 41.0 / 840.0 * elem(k[12], d));
       } // end computing 8th order solution
 
       // Compute the truncation error estimate for the step
       State error_estimate;
       for (int d = 0; d < dims; ++d)
       {
-        error_estimate[d] = h * 41.0 / 840.0 * (k[0][d] + k[10][d] - k[11][d] - k[12][d]);
+        elem(error_estimate, d) = h * 41.0 / 840.0 * (elem(k[0], d) + elem(k[10], d) - elem(k[11], d) - elem(k[12], d));
       }
 
       double err2 = 0.0; // error scaled by the tolerance
 
       for (int d = 0; d < dims; ++d)
       {
-        double scale = atol + rtol * std::max(std::abs(y0[d]), std::abs(y8[d]));
-        double ratio = error_estimate[d] / scale;
+        double scale = atol + rtol * std::max(std::abs(elem(y0, d)), std::abs(elem(y8, d)));
+        double ratio = elem(error_estimate, d) / scale;
         err2 += ratio * ratio;
       }
 
@@ -343,11 +362,6 @@ namespace RKF78
   template <typename State, typename Ode>
   Results integrate(const double t0, const double tf, State y0, Ode &&f, Options options)
   {
-    // Compile-time checks for the State and Ode types
-    static_assert(StateLike<State>,
-                  "RKF78::integrate: State must support size(), begin(), end(), and operator[]");
-    static_assert(std::is_invocable_v<Ode &, double, const State &, State &>,
-                  "RKF78::integrate: f must be callable as void f(double, const State&, State&)");
     auto adapter = [&](const double t, const State &y, State &dy, const std::nullptr_t &)
     {
       f(t, y, dy);
