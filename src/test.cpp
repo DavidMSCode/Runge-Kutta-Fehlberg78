@@ -5,22 +5,32 @@
 
 using namespace RKF78;
 
-ODEFunction<std::array<double,1>, std::array<double,1>> f = [](const double t, const std::array<double,1> &y, std::array<double,1> &dy, const std::array<double,1> &params)
+//params stored in a std::array
+void f1(const double t, const std::array<double,2> &y, std::array<double,2> &dy, const std::array<double,2> params)
 {
-  dy[0] = -params[0] * y[0];
+  dy[0] = params[0]*t*y[0]*log(y[1]);
+  dy[1] = params[1]*t*y[1]*log(y[0]);
 };
 
-ODEFunction<std::array<double,2>, std::array<double,0>> f2 = [](const double t, const std::array<double,2> &y, std::array<double,2> &dy, const std::array<double,0> &params)
+//pointer to the parameters array
+void f2(const double t, const std::array<double,2> &y, std::array<double,2> &dy, const double* params)
 {
-  dy[0] = -2*t*y[0]*log(y[1]);
-  dy[1] = 2*t*y[1]*log(y[0]);
- 
+  dy[0] = params[0]*t*y[0]*log(y[1]);
+  dy[1] = params[1]*t*y[1]*log(y[0]);
+};
+
+//no params at all
+void f3(const double t, const std::array<double,2> &y, std::array<double,2> &dy)
+{
+  dy[0] = -2.0*t*y[0]*log(y[1]);
+  dy[1] = 2.0*t*y[1]*log(y[0]);
 };
 
 int main(int argc, char *argv[])
 {
     std::array<double,2> y0 = {exp(1.0),1.0};
-    std::array<double,0> params = {};
+    double params_ptr[2] = {-2.0,2.0};
+    std::array<double,2> params_array = {-2.0,2.0};
     double t0 = 0.0;
     double tf = 5.0;
 
@@ -29,7 +39,19 @@ int main(int argc, char *argv[])
     options.atol = 1e-16;
     options.rtol = 1e-16;
 
-  auto results = integrate(t0, tf, y0, f2, params, options);
+  auto results = integrate(t0, tf, y0, f1, params_array, options);
+  auto results2 = integrate(t0, tf, y0, f2, params_ptr, options);
+  auto results3 = integrate(t0, tf, y0, f3, options);
+
+  //ouput the final state for each integration
+  std::cout << "Results from f1 with params as std::array: " << std::endl;
+  std::cout << "Final value: " << results.yf[0] << ", " << results.yf[1] << std::endl;
+  std::cout << "Results from f2 with params as pointer: " << std::endl;
+  std::cout << "Final value: " << results2.yf[0] << ", " << results2.yf[1] << std::endl;
+  std::cout << "Results from f3 with no params: " << std::endl;
+  std::cout << "Final value: " << results3.yf[0] << ", " << results3.yf[1] << std::endl;
+
+
   std::cout << "Accepted step samples: " << results.t.size() << std::endl;
   if (!results.y.empty())
   {
@@ -38,7 +60,6 @@ int main(int argc, char *argv[])
     std::cout << "Last step value: t=" << results.t.back()
           << " y=(" << results.y.back()[0] << ", " << results.y.back()[1] << ")" << std::endl;
   }
-    std::cout << "Final value: " << results.yf[0] << ", " << results.yf[1] << std::endl;
     std::cout << "Number of steps: " << results.accepted << std::endl;
     std::cout << "Number of rejected steps: " << results.rejected << std::endl;
     std::cout << "Number of function evaluations: " << results.fevals << std::endl;
