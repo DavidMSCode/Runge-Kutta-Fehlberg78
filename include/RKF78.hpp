@@ -8,11 +8,24 @@
 #include <array>
 #include <vector>
 #include <cmath>
+#include <cstddef>
+#include <utility>
+#include <type_traits>
+#include <concepts>
 
 #pragma once // Include guard to prevent multiple inclusions of this header file
 
 namespace RKF78
 {
+
+  // Minimal compile-time shape checks for the State container
+  template <typename S>
+  concept StateLike = requires(S s) {
+    { s.size() } -> std::convertible_to<std::size_t>;
+    s.begin();
+    s.end();
+    s[0];
+  };
 
   struct Results
   {
@@ -169,10 +182,6 @@ namespace RKF78
           1.0,
           0.0}}}};
 
-  // function type for first order ODE system
-  template <typename State, typename Params>
-  using ODEFunction = void (*)(const double t, const State &y, State &dy, const Params &params);
-
   template <typename State>
   std::vector<double> state_to_vector(const State &state)
   {
@@ -180,9 +189,20 @@ namespace RKF78
   }
 
   // integrate template function
-  template <typename State, typename Params>
-  Results integrate(const double t0, const double tf, State y0, ODEFunction<State, Params> f, const Params &params, Options options)
+  template <typename State, typename Ode, typename Params>
+  Results integrate(const double t0, const double tf, State y0, Ode &&f, Params &&params, Options options)
   {
+
+    // Compile-time checks for the State and Ode types
+    static_assert(StateLike<State>,
+                  "RKF78::integrate: State must support size(), begin(), end(), and operator[]");
+    static_assert(
+        std::is_invocable_v<Ode &, double, const State &, State &, Params &> ||
+            std::is_invocable_v<Ode &, double, const State &, State &, const Params &>,
+        "RKF78::integrate: f must be callable as void f(double, const State&, State&, (const) Params&)");
+
+
+
     double &atol = options.atol;
     double &rtol = options.rtol;
     double &h = options.h0; // initial step size
