@@ -1,4 +1,5 @@
 # Runge-Kutta-Fehlberg7(8)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://davidmscode.github.io/Runge-Kutta-Fehlberg78/)
 A header-only c++ implementation of the 7/8th order Runge-Kutta-Fehlberg method. In this program the 8th order solution is used to compute the next step. Error is estimated using the difference between the 7th and 8th order solutions.
 
 Implemented as a template class, this library allows for the numerical solution of ordinary differential equations (ODEs) of the form dy/dt = f(t, y), where y is a vector of dependent variables and t is the independent variable.
@@ -65,12 +66,7 @@ open ../docs/build/html/index.html  # macOS convenience
 
 Online docs (GitHub Pages):
 
-- This repository is configured to publish the Doxygen HTML to GitHub Pages via CI.
-- After pushing to your default branch and enabling Pages (Source: GitHub Actions) in the repository settings, the site will be available at a URL like:
-
-	https://YOUR-GITHUB-USERNAME.github.io/Runge-Kutta-Fehlberg78/
-
-	Replace YOUR-GITHUB-USERNAME with your actual username or org name.
+- Published automatically via CI to: https://davidmscode.github.io/Runge-Kutta-Fehlberg78/
 
 Notes:
 - Header-only: just add `include/` to your include path and `#include "RKF78.hpp"`.
