@@ -1,0 +1,17 @@
+# Doxygen configuration for RKF78
+PROJECT_NAME           = "RKF78"
+PROJECT_BRIEF          = "Runge–Kutta–Fehlberg 7(8) header-only ODE solver"
+OUTPUT_DIRECTORY       = docs/build
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+QUIET                  = NO
+WARN_IF_UNDOCUMENTED   = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+INPUT                  = include README.md USAGE.md
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+FILE_PATTERNS          = *.hpp *.h *.md
+INLINE_SOURCES         = YES
+JAVADOC_AUTOBRIEF      = YES
+WARN_IF_DOC_ERROR      = YES

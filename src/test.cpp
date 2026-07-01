@@ -52,42 +52,40 @@ int main(int argc, char *argv[])
   std::cout << "Final value: " << results3.yf[0] << ", " << results3.yf[1] << std::endl;
 
 
-  std::cout << "Accepted step samples: " << results.t.size() << std::endl;
-  if (!results.y.empty())
-  {
-    std::cout << "First step value: t=" << results.t.front()
-          << " y=(" << results.y.front()[0] << ", " << results.y.front()[1] << ")" << std::endl;
-    std::cout << "Last step value: t=" << results.t.back()
-          << " y=(" << results.y.back()[0] << ", " << results.y.back()[1] << ")" << std::endl;
-  }
+    std::cout << "Accepted step samples: " << results.t.size() << std::endl;
+    if (results.t.size() > 0)
+    {
+      const auto &y_first = results.y_vector(0);
+      const auto &y_last  = results.y_vector(results.t.size()-1);
+      std::cout << "First step value: t=" << results.t.front()
+        << " y=(" << y_first[0] << ", " << y_first[1] << ")" << std::endl;
+      std::cout << "Last step value: t=" << results.t.back()
+        << " y=(" << y_last[0] << ", " << y_last[1] << ")" << std::endl;
+    }
     std::cout << "Number of steps: " << results.accepted << std::endl;
     std::cout << "Number of rejected steps: " << results.rejected << std::endl;
     std::cout << "Number of function evaluations: " << results.fevals << std::endl;
 
 
 
-    // // check the accepted step values against the exact solution
-    // for (std::size_t i = 0; i < results.t.size(); ++i)
-    // {
-    //   double t_step = results.t[i];
-    //   std::vector<double> y_step = results.y[i];
-    //   std::vector<double> y_exact = {exp(cos(t_step*t_step)),exp(sin(t_step*t_step))};
+    // check the accepted step values against the exact solution
+    for (std::size_t i = 0; i < results.t.size(); i+=100)
+    {
+      double t_step = results.t[i];
+      const std::vector<double>& y_step = results.y_vector(i);
+      std::vector<double> y_exact = {exp(cos(t_step*t_step)),exp(sin(t_step*t_step))};
 
-    //   std::cout << "t=" << t_step << " y_step=(" << y_step[0] << ", " << y_step[1] << ")"
-    //             << " y_exact=(" << y_exact[0] << ", " << y_exact[1] << ")" << std::endl;
+      std::cout << "t=" << t_step << " y_step=(" << y_step[0] << ", " << y_step[1] << ")"
+                << " y_exact=(" << y_exact[0] << ", " << y_exact[1] << ")" << std::endl;
 
-    //   double error0 = std::abs(y_step[0] - y_exact[0])/std::abs(y_exact[0]);
-    //   double error1 = std::abs(y_step[1] - y_exact[1])/std::abs(y_exact[1]);
+      double error0 = std::abs(y_step[0] - y_exact[0])/std::abs(y_exact[0]);
+      double error1 = std::abs(y_step[1] - y_exact[1])/std::abs(y_exact[1]);
 
-    //   std::cout << "Error in y[0]: " << error0 << std::endl;
-    //   std::cout << "Error in y[1]: " << error1 << std::endl;
+      std::cout << "Error in y[0]: " << error0 << std::endl;
+      std::cout << "Error in y[1]: " << error1 << std::endl;
 
 
     
-    // }
-
-  
-
-
+    }
   return 0;
 }

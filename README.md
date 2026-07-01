@@ -52,6 +52,26 @@ cmake --build . --config Release
 ./RKF78_example
 ```
 
+### Documentation
+
+To generate the API reference (HTML) with Doxygen:
+
+```bash
+cd build
+cmake ..
+cmake --build . --target docs
+open ../docs/build/html/index.html  # macOS convenience
+```
+
+Online docs (GitHub Pages):
+
+- This repository is configured to publish the Doxygen HTML to GitHub Pages via CI.
+- After pushing to your default branch and enabling Pages (Source: GitHub Actions) in the repository settings, the site will be available at a URL like:
+
+	https://YOUR-GITHUB-USERNAME.github.io/Runge-Kutta-Fehlberg78/
+
+	Replace YOUR-GITHUB-USERNAME with your actual username or org name.
+
 Notes:
 - Header-only: just add `include/` to your include path and `#include "RKF78.hpp"`.
 - State/parameter types can be `std::array`, `std::vector`, or any container with `.size()` and random access '[]'.
@@ -59,6 +79,10 @@ Notes:
  - Call forms:
 	 - No params: `RKF78::integrate(t0, tf, y0, f_np)` or with options `..., f_np, opt)`.
 	 - With params: `RKF78::integrate(t0, tf, y0, f, params)` or with options `..., f, params, opt)`.
+
+	### References
+
+	1. E. Fehlberg, "Classical Fifth-, Sixth-, Seventh-, and Eighth-Order Runge-Kutta Formulas with Stepsize Control," NASA Technical Report R-287, 1968. NTRS: https://ntrs.nasa.gov/citations/19680027281
 
 ### With params and options
 

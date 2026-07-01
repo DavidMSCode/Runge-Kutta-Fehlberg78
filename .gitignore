@@ -17,6 +17,9 @@
 *.ninja_deps
 *.ninja_log
 
+# Doxygen output
+/docs/build/
+
 # IDE / editor metadata
 /.vscode/
 /.idea/
@@ -29,3 +32,29 @@
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 # be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 # and can be added to the global gitignore or merged into this file.
+
+# OS / misc
+.DS_Store
+Thumbs.db
+
+# Compiled objects (general)
+*.o
+*.obj
+*.lo
+
+# Static / shared libs and binaries
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Debug symbols
+*.dSYM/
+
+# Swap / temp files
+*~
+*.swp
+*.swo
+*.tmp
+.cache/
